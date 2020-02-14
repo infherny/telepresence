@@ -181,6 +181,7 @@ def supplant_deployment(
     expose: PortMapping,
     custom_nameserver: Optional[str],
     service_account: str,
+    deployment_type: str,
 ) -> Tuple[str, str]:
     """
     Swap out an existing Deployment, supplant method.
@@ -202,7 +203,7 @@ def supplant_deployment(
     deployment_json = get_deployment_json(
         runner,
         deployment,
-        "deployment",
+        deployment_type,
     )
     container = _get_container_name(container, deployment_json)
 
@@ -230,7 +231,7 @@ def supplant_deployment(
         """Resize the original deployment (kubectl scale)"""
         runner.check_call(
             runner.kubectl(
-                "scale", "deployment", deployment,
+                "scale", deployment_type, deployment,
                 "--replicas={}".format(replicas)
             )
         )
@@ -247,7 +248,7 @@ def supplant_deployment(
             )
         runner.check_call(
             runner.kubectl(
-                "delete", "deployment", new_deployment_name, *ignore
+                "delete", deployment_type, new_deployment_name, *ignore
             )
         )
 

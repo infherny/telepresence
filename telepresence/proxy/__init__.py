@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from functools import partial
 from subprocess import CalledProcessError
 
 from telepresence.runner import Runner
@@ -89,8 +90,10 @@ def setup(runner: Runner, args):
             operation = swap_deployment_openshift
             deployment_type = "deploymentconfig"
         else:
-            operation = supplant_deployment
-            deployment_type = "deployment"
+            operation = partial(
+                supplant_deployment, deployment_type=args.deployment_type
+            )
+            deployment_type = args.deployment_type
         args.operation = "swap_deployment"
 
     # minikube/minishift break DNS because DNS gets captured, sent to minikube,
