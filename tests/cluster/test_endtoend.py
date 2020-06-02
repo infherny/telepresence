@@ -18,6 +18,8 @@ from .utils import DEPLOYMENT_TYPE, KUBECTL, query_from_cluster
 
 @pytest.fixture(scope="session")
 def origin_ip():
+    if the_cluster_ip == the_origin_ip:  # local cluster
+        return None
     return the_origin_ip
 
 
@@ -241,6 +243,9 @@ def test_network_routing_also_proxy_hostname(probe, origin_ip):
     if probe.method.name != "vpn-tcp":
         pytest.skip("Test only applies to --method vpn-tcp usage.")
 
+    if origin_ip is None:  # Local cluster
+        pytest.skip("Test does not work with local clusters.")
+
     probe_result = probe.result()
 
     (success, request_ip) = probe_also_proxy(
@@ -260,6 +265,9 @@ def test_network_routing_also_proxy_ip_literal(probe, origin_ip):
     if probe.method.name != "vpn-tcp":
         pytest.skip("Test only applies to --method vpn-tcp usage.")
 
+    if origin_ip is None:  # Local cluster
+        pytest.skip("Test does not work with local clusters.")
+
     probe_result = probe.result()
 
     (success, request_ip) = probe_also_proxy(
@@ -278,6 +286,9 @@ def test_network_routing_also_proxy_ip_cidr(probe, origin_ip):
     """
     if probe.method.name != "vpn-tcp":
         pytest.skip("Test only applies to --method vpn-tcp usage.")
+
+    if origin_ip is None:  # Local cluster
+        pytest.skip("Test does not work with local clusters.")
 
     probe_result = probe.result()
 
@@ -335,8 +346,10 @@ def test_network_routing_from_cluster_auto_expose_same(probe):
     otherwise we will miss bugs where a Telepresence proxy container is added
     rather than being swapped.
     """
-    if probe.operation.name != "swap":
-        pytest.skip("Test only applies to --swap-deployment usage.")
+    if probe.operation.name not in ("swap", "existing"):
+        pytest.skip(
+            "Test only applies to --swap-deployment and --deployment usage."
+        )
 
     result = probe.result()
     http = probe.operation.http_server_auto_expose_same
@@ -351,8 +364,10 @@ def test_network_routing_from_cluster_auto_expose_diff(probe):
     Like ``test_network_routing_from_cluster_auto_expose_same`` but for the
     case where the exposed port and the container port are different.
     """
-    if probe.operation.name != "swap":
-        pytest.skip("Test only applies to --swap-deployment usage.")
+    if probe.operation.name not in ("swap", "existing"):
+        pytest.skip(
+            "Test only applies to --swap-deployment and --deployment usage."
+        )
 
     result = probe.result()
     http = probe.operation.http_server_auto_expose_diff
@@ -399,7 +414,14 @@ def httpbin_ip():
     return origin
 
 
+def get_cluster_ip():
+    result = query_from_cluster("http://httpbin.org/ip", "default")
+    return fix_httpbin_ip(loads(result)["origin"])
+
+
 the_origin_ip = IPv4Address(httpbin_ip())
+
+the_cluster_ip = IPv4Address(get_cluster_ip())
 
 
 def probe_also_proxy(probe_result, hostname):
