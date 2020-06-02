@@ -103,7 +103,7 @@ def get_proxy_cidrs(
     result = set(k8s_resolve(runner, remote_info, hosts_or_ips))
     context_cache = runner.cache.child(runner.kubectl.context)
     result.update(context_cache.lookup("podCIDRs", lambda: podCIDRs(runner)))
-    result.add(
+    result.update(
         context_cache.lookup("serviceCIDR", lambda: serviceCIDR(runner))
     )
 
