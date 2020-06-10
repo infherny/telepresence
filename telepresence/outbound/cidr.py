@@ -215,7 +215,7 @@ def podCIDRs(runner: Runner):
                 # Apparently a problem on OpenShift
                 pass
         if pod_ips:
-            cidrs.extend(covering_cidr(pod_ips))
+            cidrs.update(covering_cidr(pod_ips))
 
     return list(cidrs)
 
